@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec3 {
@@ -55,6 +55,14 @@ impl Mul<f64> for Vec3 {
 
     fn mul(self, multiplier: f64) -> Vec3 {
         Vec3 { x: self.x * multiplier, y: self.y * multiplier, z: self.z * multiplier }
+    }
+}
+
+impl Neg for Vec3 {
+    type Output = Vec3;
+
+    fn neg(self) -> Vec3 {
+        Vec3::new(-self.x, -self.y, -self.z)
     }
 }
 

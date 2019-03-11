@@ -25,7 +25,7 @@ fn main() {
     let camera = Camera::fixed();
     let scene = Scene {
         objects: vec![Box::new(sphere)],
-        lights: vec![Box::new(Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() })]
+        lights: vec![Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
     };
     let pixel_colours = render(&scene, &camera);
     let mut img = Image::new(camera.px_per_row, camera.row_count);
@@ -96,10 +96,20 @@ fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
     //     check intersection is closer than light
     //     if both true
     //       point is in shadow
-    for light in scene.lights {
-
+    for light in scene.lights.iter() {
+        // The direction the light shines on the point
+        let light_dir = light.direction(point);
+        let shadow_ray = Ray { source: *point, dir: -light_dir };
+        for object in scene.objects.iter() {
+            if let Some(distance) = object.intersect(&shadow_ray) {
+                let shadow_point = shadow_ray.source + shadow_ray.dir * distance;
+                if distance >= 0.0 && distance < light.distance(&shadow_point) {
+                    return true;
+                }
+            }
+        }
     }
-    true
+    false
 }
 
 struct RayIntersection<'a> {
@@ -133,8 +143,7 @@ trait SceneObject {
 
 struct Scene {
     objects: Vec<Box<dyn SceneObject>>,
-    // TODO I'm sure there's a nicer way to do this - lifetime instead of box?
-    lights: Vec<Box<Light>>,
+    lights: Vec<Light>,
 }
 
 /// A 24-bit RGB colour.
@@ -168,10 +177,18 @@ enum Light {
 }
 
 impl Light {
-    fn dist(&self, loc: &Vec3) -> f64 {
+    fn distance(&self, loc: &Vec3) -> f64 {
         match self {
             Light::Point { loc: light_loc } => (*light_loc - *loc).mag(),
             Light::Distant { dir: _ } => std::f64::INFINITY,
+        }
+    }
+
+    /// The direction of the light falling on the point, orientated from the light to the point.
+    fn direction(&self, point: &Vec3) -> Vec3 {
+        match self {
+            Light::Point { loc } => *point - *loc,
+            Light::Distant { dir } => *dir,
         }
     }
 }
