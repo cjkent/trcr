@@ -1,3 +1,8 @@
+#[macro_use]
+extern crate bmp;
+
+use bmp::{Image, Pixel};
+
 use vec3::Vec3;
 
 use crate::sphere::Sphere;
@@ -16,18 +21,27 @@ fn main() {
     let scene = Scene {
         objects: vec![Box::new(sphere)],
     };
-    let pixel_colours = render(scene, camera);
+    let pixel_colours = render(&scene, &camera);
+    let mut img = Image::new(camera.px_per_row, camera.row_count);
+    let mut idx = 0;
+    for y in 0..camera.row_count {
+        for x in 0..camera.px_per_row {
+            let colour = pixel_colours[idx];
+            img.set_pixel(x, y, colour.pixel());
+        }
+    }
+    let _ = img.save("/Users/chris/tmp/trcr.bmp");
 }
 
-fn render(scene: Scene, camera: Camera) -> Vec<Colour> {
+fn render(scene: &Scene, camera: &Camera) -> Vec<Colour> {
     let mut pixel_colours: Vec<Colour> = vec![];
-    for x in 0..camera.row_count {
-        for y in 0..camera.px_per_row {
+    for y in 0..camera.row_count {
+        for x in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
             pixel_colours.push(trace(&ray, &scene.objects));
         }
     }
-    vec![]
+    pixel_colours
 }
 
 fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
@@ -164,6 +178,10 @@ impl Colour {
     pub fn to_24bit_int(&self) -> u32 {
         // TODO
         0x000000
+    }
+
+    pub fn pixel(&self) -> Pixel {
+        px!(self.r, self.g, self.b)
     }
 }
 
