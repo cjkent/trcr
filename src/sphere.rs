@@ -1,4 +1,4 @@
-use crate::{Ray, SceneObject};
+use crate::{Colour, Ray, SceneObject};
 use crate::vec3::Vec3;
 
 pub struct Sphere {
@@ -20,7 +20,7 @@ impl SceneObject for Sphere {
         unimplemented!()
     }
 
-    fn colour(&self, point: &Vec3) -> Vec3 {
+    fn colour(&self, point: &Vec3) -> Colour {
         unimplemented!()
     }
 }

@@ -5,6 +5,8 @@ use crate::sphere::Sphere;
 mod sphere;
 mod vec3;
 
+const BACKGROUND_COLOUR: Colour = Colour { r: 0xD0, g: 0xD0, b: 0xFF };
+
 fn main() {
     let sphere = Sphere {
         centre: Vec3::new(0.0, 0.0, -4.0),
@@ -14,28 +16,48 @@ fn main() {
     let scene = Scene {
         objects: vec![Box::new(sphere)],
     };
-
+    let pixel_colours = render(scene, camera);
 }
 
-fn render(scene: Scene, camera: Camera) -> Vec<u32> {
-    // TODO multiple threads
+fn render(scene: Scene, camera: Camera) -> Vec<Colour> {
+    let mut pixel_colours: Vec<Colour> = vec![];
     for x in 0..camera.row_count {
         for y in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
-            let mut intersect: Option<RayIntersection> = None;
-            for obj in scene.objects.iter() {
-                if let Some(dist) = obj.intersect(&ray) {
-                    intersect = Some(RayIntersection { object: obj, dist })
-                }
-            }
+            pixel_colours.push(trace(&ray, &scene.objects));
         }
     }
     vec![]
 }
 
-struct RayIntersection {
-    object: Box<dyn SceneObject>,
-    dist: f64,
+fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
+    // The closest point found so far where the ray hits an object
+    let mut intersect: Option<RayIntersection> = None;
+    for object in objects.iter() {
+        if let Some(distance) = object.intersect(&ray) {
+            if let Some(RayIntersection { object: _, distance: min_distance }) = intersect {
+                // An intersection point has been found before, check whether this one is closer
+                if distance < min_distance {
+                    // This point is the closest found so far, keep it
+                    intersect = Some(RayIntersection { object, distance })
+                }
+            } else {
+                // This is the first point found, keep it
+                intersect = Some(RayIntersection { object, distance })
+            }
+        }
+    }
+    if let Some(RayIntersection { object, distance }) = intersect {
+        let intersect_point = ray.source + ray.dir * distance;
+        object.colour(&intersect_point)
+    } else {
+        BACKGROUND_COLOUR
+    }
+}
+
+struct RayIntersection<'a> {
+    object: &'a Box<dyn SceneObject>,
+    distance: f64,
 }
 
 struct Ray {
@@ -58,7 +80,7 @@ trait SceneObject {
 
     fn surface_normal(&self, point: &Vec3) -> Vec3;
 
-    fn colour(&self, point: &Vec3) -> Vec3;
+    fn colour(&self, point: &Vec3) -> Colour;
 }
 
 struct Scene {
