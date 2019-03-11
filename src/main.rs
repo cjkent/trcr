@@ -10,11 +10,11 @@ use crate::sphere::Sphere;
 mod sphere;
 mod vec3;
 
-const BACKGROUND_COLOUR: Colour = Colour { r: 0xD0, g: 0xD0, b: 0xFF };
+const BACKGROUND_COLOUR: Colour = Colour { r: 0x30, g: 0x30, b: 0xFF };
 
 fn main() {
     let sphere = Sphere {
-        centre: Vec3::new(0.0, 0.0, -10.0),
+        centre: Vec3::new(0.0, 0.0, -4.0),
         radius: 1.0,
         colour: Colour::from_24bit_int(0xF4AE22)
     };
@@ -81,6 +81,7 @@ struct RayIntersection<'a> {
     distance: f64,
 }
 
+#[derive(Debug)]
 struct Ray {
     source: Vec3,
     dir: Vec3,
@@ -114,6 +115,7 @@ struct Scene {
 /// The depth is the distance between the camera and the viewport.
 /// The viewport origin is the top left.
 /// The direction vector is normalised.
+#[derive(Debug)]
 struct Camera {
     loc: Vec3,
     dir: Vec3,
@@ -157,7 +159,7 @@ impl Camera {
         let px_loc = self.origin_pixel + px_offset;
         Ray {
             source: self.loc,
-            dir: px_loc - self.loc,
+            dir: (px_loc - self.loc).normalised(),
         }
     }
 }
