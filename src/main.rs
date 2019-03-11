@@ -5,8 +5,10 @@ use bmp::{Image, Pixel};
 
 use vec3::Vec3;
 
+use crate::camera::Camera;
 use crate::sphere::Sphere;
 
+mod camera;
 mod sphere;
 mod vec3;
 
@@ -14,7 +16,7 @@ const BACKGROUND_COLOUR: Colour = Colour { r: 0x30, g: 0x30, b: 0xFF };
 
 fn main() {
     let sphere = Sphere {
-        centre: Vec3::new(0.0, 0.0, -4.0),
+        centre: Vec3::new(0.0, 0.0, -2.0),
         radius: 1.0,
         colour: Colour::from_24bit_int(0xF4AE22)
     };
@@ -58,18 +60,17 @@ fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
                 // An intersection point has been found before, check whether this one is closer
                 if distance < min_distance {
                     // This point is the closest found so far, keep it
-                    println!("closer point found {}", distance);
                     intersect = Some(RayIntersection { object, distance })
                 }
             } else {
                 // This is the first point found, keep it
-                println!("new point found {}", distance);
                 intersect = Some(RayIntersection { object, distance })
             }
         }
     }
     if let Some(RayIntersection { object, distance }) = intersect {
         let intersect_point = ray.source + ray.dir * distance;
+        // TODO shadow rays, secondary rays
         object.colour(&intersect_point)
     } else {
         BACKGROUND_COLOUR
@@ -107,61 +108,6 @@ trait SceneObject {
 
 struct Scene {
     objects: Vec<Box<dyn SceneObject>>,
-}
-
-/// The camera and its viewport.
-///
-/// The location and direction refer to the camera itself.
-/// The depth is the distance between the camera and the viewport.
-/// The viewport origin is the top left.
-/// The direction vector is normalised.
-#[derive(Debug)]
-struct Camera {
-    loc: Vec3,
-    dir: Vec3,
-    depth: f64,
-    viewport_width: f64,
-    px_per_row: u32,
-    row_count: u32,
-    px_size: f64,
-    origin_pixel: Vec3,
-}
-
-impl Camera {
-    /// Returns a camera:
-    ///   * Located at the origin
-    ///   * Looking down the z-axis
-    ///   * 1 unit gap between the camera and viewport
-    ///   * Viewport ratio 1/1
-    ///   * Viewport width 2 units
-    ///   * Viewport width 200 pixels
-    fn fixed() -> Camera {
-        let viewport_width = 2.0;
-        let px_per_row = 200;
-        let row_count = 200;
-        let viewport_origin = Vec3::new(-1.0, 1.0, -1.0);
-        let px_size = viewport_width / (px_per_row as f64);
-        let origin_pixel = viewport_origin + (Vec3::new(px_size, -px_size, 0.0) / 2.0);
-        Camera {
-            loc: Vec3::new(0.0, 0.0, 0.0),
-            dir: Vec3::new(0.0, 0.0, -1.0),
-            depth: 1.0,
-            viewport_width,
-            px_per_row,
-            row_count,
-            px_size,
-            origin_pixel,
-        }
-    }
-
-    fn primary_ray(&self, x_idx: u32, y_idx: u32) -> Ray {
-        let px_offset = Vec3::new(self.px_size * (x_idx as f64), -self.px_size * (y_idx as f64), 0.0);
-        let px_loc = self.origin_pixel + px_offset;
-        Ray {
-            source: self.loc,
-            dir: (px_loc - self.loc).normalised(),
-        }
-    }
 }
 
 /// A 24-bit RGB colour.
