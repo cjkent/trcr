@@ -12,9 +12,30 @@ fn main() {
     };
     let camera = Camera::fixed();
     let scene = Scene {
-        objects: vec![sphere],
+        objects: vec![Box::new(sphere)],
     };
 
+}
+
+fn render(scene: Scene, camera: Camera) -> Vec<u32> {
+    // TODO multiple threads
+    for x in 0..camera.row_count {
+        for y in 0..camera.px_per_row {
+            let ray = camera.primary_ray(x, y);
+            let mut intersect: Option<RayIntersection> = None;
+            for obj in scene.objects.iter() {
+                if let Some(dist) = obj.intersect(&ray) {
+                    intersect = Some(RayIntersection { object: obj, dist })
+                }
+            }
+        }
+    }
+    vec![]
+}
+
+struct RayIntersection {
+    object: Box<dyn SceneObject>,
+    dist: f64,
 }
 
 struct Ray {
@@ -24,19 +45,20 @@ struct Ray {
 
 // TODO should there be a Material trait for some of these? how would that interact with this trait?
 //   intersect() and surface_normal() both belong to the object geometry
-//   colour() belongs to the material
 //   secondary_rays() is trickier as it seems to be both. or is it on material with the normal passed in?
 //   and if the object and material are separated, what holds them?
 //   or does a SceneObject struct hold a Material and ObjectGeometry?
+//   colour() belongs to the material, but in the case of textures the object geometry has an effect too
+//   should the geometry have a method to map from a point to texture coordinates?
 trait SceneObject {
     /// Returns the intersection point as a distance along the ray from its source.
-    fn intersect(&self, ray: Ray) -> Option<f64>;
+    fn intersect(&self, ray: &Ray) -> Option<f64>;
 
-    fn secondary_rays(&self, point: Vec3) -> Vec<Ray>;
+    fn secondary_rays(&self, point: &Vec3) -> Vec<Ray>;
 
-    fn surface_normal(&self, point: Vec3) -> Vec3;
+    fn surface_normal(&self, point: &Vec3) -> Vec3;
 
-    fn colour(&self, point: Vec3) -> Vec3;
+    fn colour(&self, point: &Vec3) -> Vec3;
 }
 
 struct Scene {
@@ -54,8 +76,8 @@ struct Camera {
     dir: Vec3,
     depth: f64,
     viewport_width: f64,
-    viewport_ratio: f64,
     px_per_row: u32,
+    row_count: u32,
     px_size: f64,
     origin_pixel: Vec3,
 }
@@ -71,37 +93,29 @@ impl Camera {
     fn fixed() -> Camera {
         let viewport_width = 2.0;
         let px_per_row = 200;
+        let row_count = 200;
         let viewport_origin = Vec3::new(-1.0, 1.0, -1.0);
         let px_size = viewport_width / (px_per_row as f64);
-        let origin_pixel = viewport_origin + (Vec3::new(px_size, -px_size, 0.0) / 2);
+        let origin_pixel = viewport_origin + (Vec3::new(px_size, -px_size, 0.0) / 2.0);
         Camera {
             loc: Vec3::new(0.0, 0.0, 0.0),
             dir: Vec3::new(0.0, 0.0, -1.0),
             depth: 1.0,
             viewport_width,
-            viewport_ratio: 4.0 / 3.0,
             px_per_row,
+            row_count,
             px_size,
             origin_pixel,
         }
     }
 
-    fn pixel_count(&self) -> u32 {
-        let rows = (self.px_per_row as f64 / self.viewport_ratio) as u32;
-        self.px_per_row * rows
-    }
-
     fn primary_ray(&self, x_idx: u32, y_idx: u32) -> Ray {
-        let px_offset = Vec3::new(self.px_size * x_idx, -self.px_size * y_idx, 0.0);
+        let px_offset = Vec3::new(self.px_size * (x_idx as f64), -self.px_size * (y_idx as f64), 0.0);
         let px_loc = self.origin_pixel + px_offset;
         Ray {
             source: self.loc,
             dir: px_loc - self.loc,
         }
-    }
-
-    fn render(scene: Scene) -> Vec<u32> {
-        vec![]
     }
 }
 

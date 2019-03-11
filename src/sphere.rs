@@ -2,25 +2,25 @@ use crate::{Ray, SceneObject};
 use crate::vec3::Vec3;
 
 pub struct Sphere {
-    centre: Vec3,
-    radius: f64,
+    pub centre: Vec3,
+    pub radius: f64,
 }
 
 impl SceneObject for Sphere {
-    fn intersect(&self, ray: Ray) -> Option<f64> {
+    fn intersect(&self, ray: &Ray) -> Option<f64> {
         unimplemented!()
     }
 
-    fn secondary_rays(&self, point: Vec3) -> Vec<Ray> {
+    fn secondary_rays(&self, point: &Vec3) -> Vec<Ray> {
         // TODO this is only right for diffuse objects
         vec![]
     }
 
-    fn surface_normal(&self, point: Vec3) -> Vec3 {
+    fn surface_normal(&self, point: &Vec3) -> Vec3 {
         unimplemented!()
     }
 
-    fn colour(&self, point: Vec3) -> Vec3 {
+    fn colour(&self, point: &Vec3) -> Vec3 {
         unimplemented!()
     }
 }
