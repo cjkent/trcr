@@ -13,8 +13,9 @@ mod vec3;
 const BACKGROUND_COLOUR: Colour = Colour { r: 0xD0, g: 0xD0, b: 0xFF };
 
 fn main() {
+    println!("does this shit even work?");
     let sphere = Sphere {
-        centre: Vec3::new(0.0, 0.0, -4.0),
+        centre: Vec3::new(0.0, 0.0, -10.0),
         radius: 1.0,
         colour: Colour::from_24bit_int(0xF4AE22)
     };
@@ -28,10 +29,14 @@ fn main() {
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let colour = pixel_colours[idx];
+            println!("colour: {:?}", colour);
             img.set_pixel(x, y, colour.pixel());
-        }
+            idx += 1;
+        };
+    };
+    if let Err(err) = img.save("/Users/chris/tmp/trcr.bmp") {
+        println!("Error saving image {}", err);
     }
-    let _ = img.save("/Users/chris/tmp/trcr.bmp");
 }
 
 fn render(scene: &Scene, camera: &Camera) -> Vec<Colour> {
