@@ -1,0 +1,7 @@
+[package]
+name = "trcr"
+version = "0.1.0"
+authors = ["chris"]
+edition = "2018"
+
+[dependencies]
