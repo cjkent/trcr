@@ -13,8 +13,10 @@ impl SceneObject for Sphere {
         //   https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-sphere-intersection
         let l = self.centre - ray.source;
         let tca = l.dot(&ray.dir);
-        let d2 = (l.mag().powi(2) + tca.powi(2)).sqrt();
+        let l_mag = l.mag();
+        let d2 = (l_mag.powi(2) + tca.powi(2)).sqrt();
         let radius2 = self.radius.powi(2);
+        println!("l: {:?}, l_mag: {}, tca: {}, d2: {}, radius2: {}", l, l_mag, tca, d2, radius2);
         if d2 > radius2 {
             return None;
         }

@@ -13,7 +13,6 @@ mod vec3;
 const BACKGROUND_COLOUR: Colour = Colour { r: 0xD0, g: 0xD0, b: 0xFF };
 
 fn main() {
-    println!("does this shit even work?");
     let sphere = Sphere {
         centre: Vec3::new(0.0, 0.0, -10.0),
         radius: 1.0,
@@ -29,7 +28,6 @@ fn main() {
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let colour = pixel_colours[idx];
-            println!("colour: {:?}", colour);
             img.set_pixel(x, y, colour.pixel());
             idx += 1;
         };
@@ -60,10 +58,12 @@ fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
                 // An intersection point has been found before, check whether this one is closer
                 if distance < min_distance {
                     // This point is the closest found so far, keep it
+                    println!("closer point found {}", distance);
                     intersect = Some(RayIntersection { object, distance })
                 }
             } else {
                 // This is the first point found, keep it
+                println!("new point found {}", distance);
                 intersect = Some(RayIntersection { object, distance })
             }
         }
