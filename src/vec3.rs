@@ -20,7 +20,7 @@ impl Vec3 {
         self.dot(self).sqrt()
     }
 
-    pub fn normalized(&self) -> Vec3 {
+    pub fn normalised(&self) -> Vec3 {
         let mag = self.mag();
         Vec3 { x: self.x / mag, y: self.y / mag, z: self.z / mag }
     }
@@ -71,7 +71,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized() {
-        assert_eq!(Vec3::new(1.0, 0.0, 0.0).normalized(), Vec3::new(1.0, 0.0, 0.0))
+    fn normalised() {
+        assert_eq!(Vec3::new(1.0, 0.0, 0.0).normalised(), Vec3::new(1.0, 0.0, 0.0))
     }
 }

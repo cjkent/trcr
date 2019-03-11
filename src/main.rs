@@ -16,6 +16,7 @@ fn main() {
     let sphere = Sphere {
         centre: Vec3::new(0.0, 0.0, -4.0),
         radius: 1.0,
+        colour: Colour::from_24bit_int(0xF4AE22)
     };
     let camera = Camera::fixed();
     let scene = Scene {
@@ -38,7 +39,8 @@ fn render(scene: &Scene, camera: &Camera) -> Vec<Colour> {
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
-            pixel_colours.push(trace(&ray, &scene.objects));
+            let pixel_colour = trace(&ray, &scene.objects);
+            pixel_colours.push(pixel_colour);
         }
     }
     pixel_colours
@@ -157,10 +159,10 @@ impl Camera {
 
 /// A 24-bit RGB colour.
 #[derive(Debug, Clone, Copy, PartialEq)]
-struct Colour {
-    r: u8,
-    g: u8,
-    b: u8,
+pub struct Colour {
+pub r: u8,
+    pub g: u8,
+    pub b: u8,
 }
 
 impl Colour {
@@ -173,11 +175,6 @@ impl Colour {
         let green = (colour & 0x00ff00) >> 8;
         let blue = colour & 0x0000ff;
         Colour::new(red as u8, green as u8, blue as u8)
-    }
-
-    pub fn to_24bit_int(&self) -> u32 {
-        // TODO
-        0x000000
     }
 
     pub fn pixel(&self) -> Pixel {
