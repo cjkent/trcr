@@ -3,6 +3,7 @@ extern crate bmp;
 
 use bmp::{Image, Pixel};
 
+use ::Light::Distant;
 use vec3::Vec3;
 
 use crate::camera::Camera;
@@ -13,6 +14,7 @@ mod sphere;
 mod vec3;
 
 const BACKGROUND_COLOUR: Colour = Colour { r: 0x30, g: 0x30, b: 0xFF };
+const BLACK: Colour = Colour { r: 0x00, g: 0x00, b: 0x00 };
 
 fn main() {
     let sphere = Sphere {
@@ -23,6 +25,7 @@ fn main() {
     let camera = Camera::fixed();
     let scene = Scene {
         objects: vec![Box::new(sphere)],
+        lights: vec![Box::new(Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() })]
     };
     let pixel_colours = render(&scene, &camera);
     let mut img = Image::new(camera.px_per_row, camera.row_count);
@@ -44,17 +47,17 @@ fn render(scene: &Scene, camera: &Camera) -> Vec<Colour> {
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
-            let pixel_colour = trace(&ray, &scene.objects);
+            let pixel_colour = trace(&ray, scene);
             pixel_colours.push(pixel_colour);
         }
     }
     pixel_colours
 }
 
-fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
+fn trace(ray: &Ray, scene: &Scene) -> Colour {
     // The closest point found so far where the ray hits an object
     let mut intersect: Option<RayIntersection> = None;
-    for object in objects.iter() {
+    for object in scene.objects.iter() {
         if let Some(distance) = object.intersect(&ray) {
             if let Some(RayIntersection { object: _, distance: min_distance }) = intersect {
                 // An intersection point has been found before, check whether this one is closer
@@ -70,11 +73,33 @@ fn trace(ray: &Ray, objects: &Vec<Box<dyn SceneObject>>) -> Colour {
     }
     if let Some(RayIntersection { object, distance }) = intersect {
         let intersect_point = ray.source + ray.dir * distance;
-        // TODO shadow rays, secondary rays
-        object.colour(&intersect_point)
+        // TODO
+        //   * shadow rays
+        //   * reflection rays
+        //   * refraction rays
+        if is_shadow(&intersect_point, scene) {
+            BLACK
+        } else {
+            object.colour(&intersect_point)
+        }
     } else {
         BACKGROUND_COLOUR
     }
+}
+
+fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
+    // for each light
+    //   calculate ray from intersection to light
+    //   check for intersections with objects
+    //   for each intersection
+    //     check distance is +ve (i.e. object is between intersection and light)
+    //     check intersection is closer than light
+    //     if both true
+    //       point is in shadow
+    for light in scene.lights {
+
+    }
+    true
 }
 
 struct RayIntersection<'a> {
@@ -83,9 +108,9 @@ struct RayIntersection<'a> {
 }
 
 #[derive(Debug)]
-struct Ray {
-    source: Vec3,
-    dir: Vec3,
+pub struct Ray {
+    pub source: Vec3,
+    pub dir: Vec3,
 }
 
 // TODO should there be a Material trait for some of these? how would that interact with this trait?
@@ -108,12 +133,14 @@ trait SceneObject {
 
 struct Scene {
     objects: Vec<Box<dyn SceneObject>>,
+    // TODO I'm sure there's a nicer way to do this - lifetime instead of box?
+    lights: Vec<Box<Light>>,
 }
 
 /// A 24-bit RGB colour.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Colour {
-pub r: u8,
+    pub r: u8,
     pub g: u8,
     pub b: u8,
 }
@@ -135,3 +162,16 @@ impl Colour {
     }
 }
 
+enum Light {
+    Point { loc: Vec3 },
+    Distant { dir: Vec3 },
+}
+
+impl Light {
+    fn dist(&self, loc: &Vec3) -> f64 {
+        match self {
+            Light::Point { loc: light_loc } => (*light_loc - *loc).mag(),
+            Light::Distant { dir: _ } => std::f64::INFINITY,
+        }
+    }
+}
