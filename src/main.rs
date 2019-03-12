@@ -3,7 +3,6 @@ extern crate bmp;
 
 use bmp::{Image, Pixel};
 
-use ::Light::Distant;
 use vec3::Vec3;
 
 use crate::camera::Camera;
@@ -25,7 +24,7 @@ fn main() {
     let camera = Camera::fixed();
     let scene = Scene {
         objects: vec![Box::new(sphere)],
-        lights: vec![Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
+        lights: vec![Light::Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
     };
     let pixel_colours = render(&scene, &camera);
     let mut img = Image::new(camera.px_per_row, camera.row_count);
@@ -89,11 +88,11 @@ fn trace(ray: &Ray, scene: &Scene) -> Colour {
 
 fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
     // for each light
-    //   calculate ray from intersection to light
+    //   calculate ray from point to light
     //   check for intersections with objects
     //   for each intersection
-    //     check distance is +ve (i.e. object is between intersection and light)
-    //     check intersection is closer than light
+    //     check distance is +ve (i.e. object is between point and light)
+    //     check intersection is closer to point than the light is
     //     if both true
     //       point is in shadow
     for light in scene.lights.iter() {

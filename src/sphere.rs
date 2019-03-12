@@ -35,7 +35,7 @@ impl SceneObject for Sphere {
         }
     }
 
-    fn secondary_rays(&self, point: &Vec3) -> Vec<Ray> {
+    fn secondary_rays(&self, _point: &Vec3) -> Vec<Ray> {
         // TODO this is only right for diffuse objects
         vec![]
     }
@@ -44,7 +44,7 @@ impl SceneObject for Sphere {
         (*point - self.centre).normalised()
     }
 
-    fn colour(&self, point: &Vec3) -> Colour {
+    fn colour(&self, _point: &Vec3) -> Colour {
         self.colour
     }
 }
