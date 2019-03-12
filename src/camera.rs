@@ -53,9 +53,6 @@ impl Camera {
             0.0
         );
         let px_loc = self.origin_pixel + px_offset;
-        Ray {
-            source: self.loc,
-            dir: (px_loc - self.loc).normalised(),
-        }
+        Ray::new(self.loc, px_loc - self.loc)
     }
 }

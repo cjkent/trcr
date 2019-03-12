@@ -99,7 +99,7 @@ fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
     for light in scene.lights.iter() {
         // The direction the light shines on the point
         let light_dir = light.direction(point);
-        let shadow_ray = Ray { source: *point, dir: -light_dir };
+        let shadow_ray = Ray::new(*point, -light_dir);
         for object in scene.objects.iter() {
             if let Some(distance) = object.intersect(&shadow_ray) {
                 let shadow_point = shadow_ray.source + shadow_ray.dir * distance;
@@ -121,6 +121,18 @@ struct RayIntersection<'a> {
 pub struct Ray {
     pub source: Vec3,
     pub dir: Vec3,
+}
+
+impl Ray {
+    /// Creates a new ray whose origin is `source` and whose direction is `dir`.
+    ///
+    /// The ray direction is normalised.
+    fn new(source: Vec3, dir: Vec3) -> Ray {
+        Ray {
+            source,
+            dir: dir.normalised()
+        }
+    }
 }
 
 // TODO should there be a Material trait for some of these? how would that interact with this trait?
