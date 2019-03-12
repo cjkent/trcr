@@ -3,6 +3,7 @@ extern crate bmp;
 
 use bmp::{Image, Pixel};
 
+use trace;
 use vec3::Vec3;
 
 use crate::camera::Camera;
@@ -62,10 +63,12 @@ fn trace(ray: &Ray, scene: &Scene) -> Colour {
                 // An intersection point has been found before, check whether this one is closer
                 if distance < min_distance {
                     // This point is the closest found so far, keep it
+                    trace!("closer point found {:?}", distance);
                     intersect = Some(RayIntersection { object, distance })
                 }
             } else {
                 // This is the first point found, keep it
+                trace!("new point found {:?}", distance);
                 intersect = Some(RayIntersection { object, distance })
             }
         }
@@ -73,9 +76,10 @@ fn trace(ray: &Ray, scene: &Scene) -> Colour {
     if let Some(RayIntersection { object, distance }) = intersect {
         let intersect_point = ray.source + ray.dir * distance;
         // TODO
-        //   * shadow rays
         //   * reflection rays
         //   * refraction rays
+        // TODO this logic is wrong - a point can be in shadow for one light and not for another
+        //   the light from all the non-shadow lights need to be summed
         if is_shadow(&intersect_point, scene) {
             BLACK
         } else {
@@ -182,6 +186,7 @@ impl Colour {
     }
 }
 
+// TODO colour and intensity
 enum Light {
     Point { loc: Vec3 },
     Distant { dir: Vec3 },
