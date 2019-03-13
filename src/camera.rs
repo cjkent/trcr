@@ -29,8 +29,8 @@ impl Camera {
     ///   * Viewport width 200 pixels
     pub fn fixed() -> Camera {
         let viewport_width = 2.0;
-        let px_per_row = 200;
-        let row_count = 200;
+        let px_per_row = 400;
+        let row_count = 400;
         let viewport_origin = Vec3::new(-1.0, 1.0, -1.0);
         let px_size = viewport_width / (px_per_row as f64);
         let origin_pixel = viewport_origin + (Vec3::new(px_size, -px_size, 0.0) / 2.0);

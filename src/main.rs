@@ -1,9 +1,10 @@
 #[macro_use]
 extern crate bmp;
+extern crate log;
 
 use bmp::{Image, Pixel};
+use log::trace;
 
-use trace;
 use vec3::Vec3;
 
 use crate::camera::Camera;

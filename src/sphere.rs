@@ -21,9 +21,9 @@ impl SceneObject for Sphere {
         if d2 > radius2 {
             return None;
         }
-        let thc = radius2 - d2;
+        let thc = (radius2 - d2).sqrt();
         let t0 = tca - thc;
-        let t1 = t0 + thc * 2.0;
+        let t1 = tca + thc;
         if t0 < 0.0 && t1 < 0.0 {
             None
         } else if t0 < 0.0 && t1 > 0.0 {
