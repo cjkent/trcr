@@ -31,7 +31,7 @@ fn main() {
         lights: vec![Light::Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
     };
     let pixels = render(&scene, &camera);
-    // TODO normalise the illuminations and populate this
+    // TODO normalise the intensities and populate this
     let colours: Vec<Colour> = vec![];
     let mut img = Image::new(camera.px_per_row, camera.row_count);
     let mut idx = 0;
@@ -47,19 +47,19 @@ fn main() {
     }
 }
 
-fn render(scene: &Scene, camera: &Camera) -> Vec<Illumination> {
-    let mut pixels: Vec<Illumination> = vec![];
+fn render(scene: &Scene, camera: &Camera) -> Vec<Intensity> {
+    let mut pixels: Vec<Intensity> = vec![];
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
-            let pixel_illumination = trace(&ray, scene);
-            pixels.push(pixel_illumination);
+            let pixel_intensity = trace(&ray, scene);
+            pixels.push(pixel_intensity);
         }
     }
     pixels
 }
 
-fn trace(ray: &Ray, scene: &Scene) -> Illumination {
+fn trace(ray: &Ray, scene: &Scene) -> Intensity {
     // The closest point found so far where the ray hits an object
     let mut intersect: Option<RayIntersection> = None;
     for object in scene.objects.iter() {
@@ -86,14 +86,14 @@ fn trace(ray: &Ray, scene: &Scene) -> Illumination {
         // TODO this logic is wrong - a point can be in shadow for one light and not for another
         //   the light from all the non-shadow lights need to be summed
         if shadow_rays(&intersect_point, scene).is_empty() {
-            Illumination::new(0.0, 0.0, 0.0)
+            Intensity::new(0.0, 0.0, 0.0)
         } else {
 //            let normal = object.surface_normal(&intersect_point);
 //            normal.dot()
-            Illumination::new(1.0, 1.0, 1.0) * object.colour(&intersect_point)
+            Intensity::new(1.0, 1.0, 1.0) * object.colour(&intersect_point)
         }
     } else {
-        Illumination::new(1.0, 1.0, 1.0) * BACKGROUND_COLOUR
+        Intensity::new(1.0, 1.0, 1.0) * BACKGROUND_COLOUR
     }
 }
 
@@ -197,25 +197,25 @@ impl Colour {
     }
 }
 
-/// The illumination of a point; components can be zero or greater
+/// The intensity of light at a point; components can be zero or greater
 #[derive(Debug, Clone, Copy)]
-struct Illumination {
+struct Intensity {
     pub r: f64,
     pub g: f64,
     pub b: f64,
 }
 
-impl Illumination {
-    fn new(r: f64, g: f64, b: f64) -> Illumination {
-        Illumination { r, b, g}
+impl Intensity {
+    fn new(r: f64, g: f64, b: f64) -> Intensity {
+        Intensity { r, b, g}
     }
 }
 
-impl Add for Illumination {
-    type Output = Illumination;
+impl Add for Intensity {
+    type Output = Intensity;
 
-    fn add(self, other: Illumination) -> Illumination {
-        Illumination {
+    fn add(self, other: Intensity) -> Intensity {
+        Intensity {
             r: self.r + other.r,
             g: self.g + other.g,
             b: self.b + other.b,
@@ -223,14 +223,26 @@ impl Add for Illumination {
     }
 }
 
-impl Mul<Colour> for Illumination {
-    type Output = Illumination;
+impl Mul<Colour> for Intensity {
+    type Output = Intensity;
 
-    fn mul(self, colour: Colour) -> Illumination {
-        Illumination {
+    fn mul(self, colour: Colour) -> Intensity {
+        Intensity {
             r: self.r * colour.r,
             g: self.g * colour.g,
             b: self.b * colour.b,
+        }
+    }
+}
+
+impl Mul<f64> for Intensity {
+    type Output = Intensity;
+
+    fn mul(self, factor: f64) -> Intensity {
+        Intensity {
+            r: self.r * factor,
+            g: self.g * factor,
+            b: self.b * factor,
         }
     }
 }
