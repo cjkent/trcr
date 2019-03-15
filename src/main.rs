@@ -2,6 +2,8 @@
 extern crate bmp;
 extern crate log;
 
+use std::ops::{Add, Mul};
+
 use bmp::{Image, Pixel};
 use log::trace;
 
@@ -14,8 +16,8 @@ mod camera;
 mod sphere;
 mod vec3;
 
-const BACKGROUND_COLOUR: Colour = Colour { r: 0x30, g: 0x30, b: 0xFF };
-const BLACK: Colour = Colour { r: 0x00, g: 0x00, b: 0x00 };
+static BACKGROUND_COLOUR: Colour = Colour { r: 0.4, g: 0.4, b: 1.0 };
+static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
     let sphere = Sphere {
@@ -28,12 +30,14 @@ fn main() {
         objects: vec![Box::new(sphere)],
         lights: vec![Light::Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
     };
-    let pixel_colours = render(&scene, &camera);
+    let pixels = render(&scene, &camera);
+    // TODO normalise the illuminations and populate this
+    let colours: Vec<Colour> = vec![];
     let mut img = Image::new(camera.px_per_row, camera.row_count);
     let mut idx = 0;
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
-            let colour = pixel_colours[idx];
+            let colour = colours[idx];
             img.set_pixel(x, y, colour.pixel());
             idx += 1;
         };
@@ -43,19 +47,19 @@ fn main() {
     }
 }
 
-fn render(scene: &Scene, camera: &Camera) -> Vec<Colour> {
-    let mut pixel_colours: Vec<Colour> = vec![];
+fn render(scene: &Scene, camera: &Camera) -> Vec<Illumination> {
+    let mut pixels: Vec<Illumination> = vec![];
     for y in 0..camera.row_count {
         for x in 0..camera.px_per_row {
             let ray = camera.primary_ray(x, y);
-            let pixel_colour = trace(&ray, scene);
-            pixel_colours.push(pixel_colour);
+            let pixel_illumination = trace(&ray, scene);
+            pixels.push(pixel_illumination);
         }
     }
-    pixel_colours
+    pixels
 }
 
-fn trace(ray: &Ray, scene: &Scene) -> Colour {
+fn trace(ray: &Ray, scene: &Scene) -> Illumination {
     // The closest point found so far where the ray hits an object
     let mut intersect: Option<RayIntersection> = None;
     for object in scene.objects.iter() {
@@ -81,17 +85,21 @@ fn trace(ray: &Ray, scene: &Scene) -> Colour {
         //   * refraction rays
         // TODO this logic is wrong - a point can be in shadow for one light and not for another
         //   the light from all the non-shadow lights need to be summed
-        if is_shadow(&intersect_point, scene) {
-            BLACK
+        if shadow_rays(&intersect_point, scene).is_empty() {
+            Illumination::new(0.0, 0.0, 0.0)
         } else {
-            object.colour(&intersect_point)
+//            let normal = object.surface_normal(&intersect_point);
+//            normal.dot()
+            Illumination::new(1.0, 1.0, 1.0) * object.colour(&intersect_point)
         }
     } else {
-        BACKGROUND_COLOUR
+        Illumination::new(1.0, 1.0, 1.0) * BACKGROUND_COLOUR
     }
 }
 
-fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
+/// Returns the shadow rays that illuminates the point
+/// The vector is empty if the point is in shadow.
+fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<Ray> {
     // for each light
     //   calculate ray from point to light
     //   check for intersections with objects
@@ -100,7 +108,8 @@ fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
     //     check intersection is closer to point than the light is
     //     if both true
     //       point is in shadow
-    for light in scene.lights.iter() {
+    let mut rays: Vec<Ray> = vec![];
+    'light: for light in scene.lights.iter() {
         // The direction the light shines on the point
         let light_dir = light.direction(point);
         let shadow_ray = Ray::new(*point, -light_dir);
@@ -108,12 +117,13 @@ fn is_shadow(point: &Vec3, scene: &Scene) -> bool {
             if let Some(distance) = object.intersect(&shadow_ray) {
                 let shadow_point = shadow_ray.source + shadow_ray.dir * distance;
                 if distance >= 0.0 && distance < light.distance(&shadow_point) {
-                    return true;
+                    continue 'light;
                 }
             }
         }
+        rays.push(shadow_ray.clone());
     }
-    false
+    rays
 }
 
 struct RayIntersection<'a> {
@@ -121,7 +131,7 @@ struct RayIntersection<'a> {
     distance: f64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub source: Vec3,
     pub dir: Vec3,
@@ -162,16 +172,16 @@ struct Scene {
     lights: Vec<Light>,
 }
 
-/// A 24-bit RGB colour.
+/// An RGB colour; each component has a value between 0 and 1 inclusive.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Colour {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
 }
 
 impl Colour {
-    pub fn new(r: u8, g: u8, b: u8) -> Colour {
+    pub fn new(r: f64, g: f64, b: f64) -> Colour {
         Colour { r, g, b }
     }
 
@@ -179,11 +189,49 @@ impl Colour {
         let red = (colour & 0xff0000) >> 16;
         let green = (colour & 0x00ff00) >> 8;
         let blue = colour & 0x0000ff;
-        Colour::new(red as u8, green as u8, blue as u8)
+        Colour::new((red as f64) / 255.0, (green as f64) / 255.0, (blue as f64) / 255.0)
     }
 
     pub fn pixel(&self) -> Pixel {
-        px!(self.r, self.g, self.b)
+        px!((self.r * 255.0) as u8, (self.g * 255.0) as u8, (self.b * 255.0) as u8)
+    }
+}
+
+/// The illumination of a point; components can be zero or greater
+#[derive(Debug, Clone, Copy)]
+struct Illumination {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+}
+
+impl Illumination {
+    fn new(r: f64, g: f64, b: f64) -> Illumination {
+        Illumination { r, b, g}
+    }
+}
+
+impl Add for Illumination {
+    type Output = Illumination;
+
+    fn add(self, other: Illumination) -> Illumination {
+        Illumination {
+            r: self.r + other.r,
+            g: self.g + other.g,
+            b: self.b + other.b,
+        }
+    }
+}
+
+impl Mul<Colour> for Illumination {
+    type Output = Illumination;
+
+    fn mul(self, colour: Colour) -> Illumination {
+        Illumination {
+            r: self.r * colour.r,
+            g: self.g * colour.g,
+            b: self.b * colour.b,
+        }
     }
 }
 
