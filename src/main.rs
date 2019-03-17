@@ -86,8 +86,6 @@ fn trace(ray: &Ray, scene: &Scene) -> Intensity {
         // TODO
         //   * reflection rays
         //   * refraction rays
-        // TODO this logic is wrong - a point can be in shadow for one light and not for another
-        //   the light from all the non-shadow lights need to be summed
         let shadow_rays = shadow_rays(&intersect_point, scene);
         if shadow_rays.is_empty() {
             Intensity::new(0.0, 0.0, 0.0)
