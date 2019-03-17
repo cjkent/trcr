@@ -2,9 +2,10 @@
 extern crate bmp;
 extern crate log;
 
-use std::ops::{Add, Mul};
+use std::ops::{Add, Div, Mul};
 
 use bmp::{Image, Pixel};
+use log::debug;
 use log::trace;
 
 use vec3::Vec3;
@@ -16,6 +17,9 @@ mod camera;
 mod sphere;
 mod vec3;
 
+// TODO derive Copy for Vec3 and stop passing around references
+
+// TODO replace these with functions
 static BACKGROUND_COLOUR: Colour = Colour { r: 0.4, g: 0.4, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
@@ -31,8 +35,7 @@ fn main() {
         lights: vec![Light::Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
     };
     let pixels = render(&scene, &camera);
-    // TODO normalise the intensities and populate this
-    let colours: Vec<Colour> = vec![];
+    let colours: Vec<Colour> = normalise_intensity(pixels);
     let mut img = Image::new(camera.px_per_row, camera.row_count);
     let mut idx = 0;
     for y in 0..camera.row_count {
@@ -124,6 +127,26 @@ fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<Ray> {
         rays.push(shadow_ray.clone());
     }
     rays
+}
+
+// TODO parameter for controlling saturation
+fn normalise_intensity(intensities: Vec<Intensity>) -> Vec<Colour> {
+    let mut max_intensity = 0.0;
+    for intensity in intensities.iter() {
+        if intensity.r > max_intensity { max_intensity = intensity.r }
+        if intensity.g > max_intensity { max_intensity = intensity.g }
+        if intensity.b > max_intensity { max_intensity = intensity.b }
+    }
+    debug!("max_colour = {:?}", max_intensity);
+    intensities.iter().map(|&intensity| normalise_colour(intensity, max_intensity)).collect()
+}
+
+fn normalise_colour(intensity: Intensity, max_intensity: f64) -> Colour {
+    Colour::new(
+        intensity.r / max_intensity,
+        intensity.g / max_intensity,
+        intensity.b / max_intensity,
+    )
 }
 
 struct RayIntersection<'a> {
