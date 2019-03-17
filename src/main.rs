@@ -20,7 +20,7 @@ mod vec3;
 // TODO derive Copy for Vec3 and stop passing around references
 
 // TODO replace these with functions
-static BACKGROUND_COLOUR: Colour = Colour { r: 0.4, g: 0.4, b: 1.0 };
+static BACKGROUND_COLOUR: Colour = Colour { r: 0.6, g: 0.6, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
