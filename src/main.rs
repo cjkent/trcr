@@ -93,9 +93,14 @@ fn trace(ray: &Ray, scene: &Scene) -> Intensity {
             Intensity::new(0.0, 0.0, 0.0)
         } else {
             let normal = object.surface_normal(&intersect_point);
-            // TODO need to sum up the effect of all rays
-            let cos_incidence_angle = normal.dot(&shadow_rays[0].dir);
-            Intensity::new(1.0, 1.0, 1.0) * object.colour(&intersect_point) * cos_incidence_angle
+            let mut total_intensity = Intensity::new(0.0, 0.0, 0.0);
+            let white = Intensity::new(1.0, 1.0, 1.0);
+            for shadow_ray in shadow_rays.iter() {
+                let cos_incidence_angle = normal.dot(&shadow_ray.dir);
+                let colour = object.colour(&intersect_point);
+                total_intensity = total_intensity + white * colour * cos_incidence_angle
+            }
+            total_intensity
         }
     } else {
         Intensity::new(1.0, 1.0, 1.0) * BACKGROUND_COLOUR
