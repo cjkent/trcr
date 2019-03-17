@@ -88,12 +88,14 @@ fn trace(ray: &Ray, scene: &Scene) -> Intensity {
         //   * refraction rays
         // TODO this logic is wrong - a point can be in shadow for one light and not for another
         //   the light from all the non-shadow lights need to be summed
-        if shadow_rays(&intersect_point, scene).is_empty() {
+        let shadow_rays = shadow_rays(&intersect_point, scene);
+        if shadow_rays.is_empty() {
             Intensity::new(0.0, 0.0, 0.0)
         } else {
-//            let normal = object.surface_normal(&intersect_point);
-//            normal.dot()
-            Intensity::new(1.0, 1.0, 1.0) * object.colour(&intersect_point)
+            let normal = object.surface_normal(&intersect_point);
+            // TODO need to sum up the effect of all rays
+            let cos_incidence_angle = normal.dot(&shadow_rays[0].dir);
+            Intensity::new(1.0, 1.0, 1.0) * object.colour(&intersect_point) * cos_incidence_angle
         }
     } else {
         Intensity::new(1.0, 1.0, 1.0) * BACKGROUND_COLOUR
