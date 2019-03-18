@@ -25,7 +25,8 @@ static BACKGROUND_COLOUR: Colour = Colour { r: 0.6, g: 0.6, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
-    let scene = scenes::one_sphere();
+    let scene = scenes::one_sphere_two_lights();
+//    let scene = scenes::one_sphere();
     let camera = Camera::fixed();
     let pixels = render(&scene, &camera);
     let colours: Vec<Colour> = normalise_intensity(pixels);
