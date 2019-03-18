@@ -27,7 +27,7 @@ fn main() {
     let sphere = Sphere {
         centre: Vec3::new(0.0, 0.0, -2.0),
         radius: 1.0,
-        colour: Colour::from_24bit_int(0xF4AE22)
+        colour: Colour::from_24bit_int(0xA0F0A0)
     };
     let camera = Camera::fixed();
     let scene = Scene {
