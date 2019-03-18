@@ -14,6 +14,7 @@ use crate::camera::Camera;
 use crate::sphere::Sphere;
 
 mod camera;
+mod scenes;
 mod sphere;
 mod vec3;
 
@@ -24,16 +25,8 @@ static BACKGROUND_COLOUR: Colour = Colour { r: 0.6, g: 0.6, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
-    let sphere = Sphere {
-        centre: Vec3::new(0.0, 0.0, -2.0),
-        radius: 1.0,
-        colour: Colour::from_24bit_int(0xA0F0A0)
-    };
+    let scene = scenes::one_sphere();
     let camera = Camera::fixed();
-    let scene = Scene {
-        objects: vec![Box::new(sphere)],
-        lights: vec![Light::Distant { dir: Vec3::new(-1.0, -5.0, -1.0).normalised() }]
-    };
     let pixels = render(&scene, &camera);
     let colours: Vec<Colour> = normalise_intensity(pixels);
     let mut img = Image::new(camera.px_per_row, camera.row_count);
@@ -92,11 +85,11 @@ fn trace(ray: &Ray, scene: &Scene) -> Intensity {
         } else {
             let normal = object.surface_normal(&intersect_point);
             let mut total_intensity = Intensity::new(0.0, 0.0, 0.0);
-            let white = Intensity::new(1.0, 1.0, 1.0);
             for shadow_ray in shadow_rays.iter() {
-                let cos_incidence_angle = normal.dot(&shadow_ray.dir);
+                let intensity = shadow_ray.light.intensity();
+                let cos_incidence_angle = normal.dot(&shadow_ray.ray.dir);
                 let colour = object.colour(&intersect_point);
-                total_intensity = total_intensity + white * colour * cos_incidence_angle
+                total_intensity = total_intensity + intensity * colour * cos_incidence_angle
             }
             total_intensity
         }
@@ -107,7 +100,7 @@ fn trace(ray: &Ray, scene: &Scene) -> Intensity {
 
 /// Returns the shadow rays that illuminates the point
 /// The vector is empty if the point is in shadow.
-fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<Ray> {
+fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<RayHit> {
     // for each light
     //   calculate ray from point to light
     //   check for intersections with objects
@@ -116,7 +109,7 @@ fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<Ray> {
     //     check intersection is closer to point than the light is
     //     if both true
     //       point is in shadow
-    let mut rays: Vec<Ray> = vec![];
+    let mut rays: Vec<RayHit> = vec![];
     'light: for light in scene.lights.iter() {
         // The direction the light shines on the point
         let light_dir = light.direction(point);
@@ -129,7 +122,11 @@ fn shadow_rays(point: &Vec3, scene: &Scene) -> Vec<Ray> {
                 }
             }
         }
-        rays.push(shadow_ray.clone());
+        let hit = RayHit {
+            ray: shadow_ray,
+            light: *light,
+        };
+        rays.push(hit);
     }
     rays
 }
@@ -159,7 +156,7 @@ struct RayIntersection<'a> {
     distance: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Ray {
     pub source: Vec3,
     pub dir: Vec3,
@@ -175,6 +172,12 @@ impl Ray {
             dir: dir.normalised()
         }
     }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct RayHit {
+    pub ray: Ray,
+    pub light: Light,
 }
 
 // TODO should there be a Material trait for some of these? how would that interact with this trait?
@@ -195,9 +198,9 @@ trait SceneObject {
     fn colour(&self, point: &Vec3) -> Colour;
 }
 
-struct Scene {
-    objects: Vec<Box<dyn SceneObject>>,
-    lights: Vec<Light>,
+pub struct Scene {
+    pub objects: Vec<Box<dyn SceneObject>>,
+    pub lights: Vec<Light>,
 }
 
 /// An RGB colour; each component has a value between 0 and 1 inclusive.
@@ -227,7 +230,7 @@ impl Colour {
 
 /// The intensity of light at a point; components can be zero or greater
 #[derive(Debug, Clone, Copy)]
-struct Intensity {
+pub struct Intensity {
     pub r: f64,
     pub g: f64,
     pub b: f64,
@@ -275,25 +278,40 @@ impl Mul<f64> for Intensity {
     }
 }
 
-// TODO colour and intensity
-enum Light {
-    Point { loc: Vec3 },
-    Distant { dir: Vec3 },
+
+
+#[derive(Debug, Clone, Copy)]
+pub enum Light {
+    Point {
+        loc: Vec3,
+        intensity: Intensity,
+    },
+    Distant {
+        dir: Vec3,
+        intensity: Intensity,
+    },
 }
 
 impl Light {
     fn distance(&self, loc: &Vec3) -> f64 {
         match self {
-            Light::Point { loc: light_loc } => (*light_loc - *loc).mag(),
-            Light::Distant { dir: _ } => std::f64::INFINITY,
+            Light::Point { loc: light_loc, intensity: _ } => (*light_loc - *loc).mag(),
+            Light::Distant { dir: _, intensity: _ } => std::f64::INFINITY,
         }
     }
 
     /// The direction of the light falling on the point, orientated from the light to the point.
     fn direction(&self, point: &Vec3) -> Vec3 {
         match self {
-            Light::Point { loc } => *point - *loc,
-            Light::Distant { dir } => *dir,
+            Light::Point { loc, intensity } => *point - *loc,
+            Light::Distant { dir, intensity } => *dir,
+        }
+    }
+
+    fn intensity(&self) -> Intensity {
+        match self {
+            Light::Point { loc, intensity } => *intensity,
+            Light::Distant { dir, intensity } => *intensity,
         }
     }
 }
