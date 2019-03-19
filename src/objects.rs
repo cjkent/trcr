@@ -1,3 +1,5 @@
+use log::trace;
+
 use crate::{Colour, Ray, SceneObject};
 use crate::vec3::Vec3;
 
@@ -79,17 +81,20 @@ impl SceneObject for XzPlane {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let denominator = self.normal.dot(&ray.dir);
         // Ray is parallel to the plane (or close to it)
-        return if denominator < 1e6 {
+        return if denominator < 1e-6 {
+            trace!("Dot product of plane normal and ray < 1e-6: {:?}", denominator);
             None
         } else {
             let t = (self.p0 - ray.source).dot(&self.normal) / denominator;
             if t < 0.0 {
+                trace!("t < 0.0: {:?}", t);
                 None
             } else {
                 let intersection = ray.source + ray.dir * t;
                 if self.in_bounds(intersection) {
                     Some(t)
                 } else {
+                    trace!("Point is not in bounds: {:?}", intersection);
                     None
                 }
             }

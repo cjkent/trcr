@@ -6,6 +6,7 @@ use std::ops::{Add, Div, Mul};
 
 use bmp::{Image, Pixel};
 use log::debug;
+use log::error;
 use log::trace;
 
 use vec3::Vec3;
@@ -25,6 +26,7 @@ static BACKGROUND_COLOUR: Colour = Colour { r: 0.6, g: 0.6, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
+    error!("Running trcr");
 //    let scene = scenes::one_sphere_two_lights();
     let scene = scenes::one_sphere();
     let camera = Camera::fixed();
