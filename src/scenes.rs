@@ -10,7 +10,7 @@ pub fn one_sphere() -> Scene {
         radius: 1.0,
         colour: Colour::from_24bit_int(0xA0F0A0)
     };
-    let plane = XzPlane::new(-0.5, -1.0, 1.0, -4.0, -2.0, Colour::from_24bit_int(0xFFFFFF));
+    let plane = XzPlane::new(-1.0, -1.0, 1.0, -4.0, -2.0, Colour::from_24bit_int(0xFFFFFF));
     let intensity = Intensity::new(1.0, 1.0, 1.0);
     let light = Light::Distant {
         dir: Vec3::new(-1.0, -5.0, -1.0).normalised(),

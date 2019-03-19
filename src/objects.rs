@@ -82,7 +82,7 @@ impl SceneObject for XzPlane {
     fn intersect(&self, ray: &Ray) -> Option<f64> {
         let denominator = (ray.dir.dot(&self.normal));
         // Ray is parallel to the plane (or close to it)
-        return if denominator < 1e-6 {
+        return if denominator.abs() < 1e-6 {
             println!(
                 "Dot product of plane normal {:?} and ray {:?} < 1e-6: {:?}",
                 self.normal,
