@@ -11,11 +11,11 @@ use log::trace;
 use vec3::Vec3;
 
 use crate::camera::Camera;
-use crate::sphere::Sphere;
+use crate::objects::Sphere;
 
 mod camera;
 mod scenes;
-mod sphere;
+mod objects;
 mod vec3;
 
 // TODO derive Copy for Vec3 and stop passing around references
@@ -25,8 +25,8 @@ static BACKGROUND_COLOUR: Colour = Colour { r: 0.6, g: 0.6, b: 1.0 };
 static BLACK: Colour = Colour { r: 0.0, g: 0.0, b: 0.0 };
 
 fn main() {
-    let scene = scenes::one_sphere_two_lights();
-//    let scene = scenes::one_sphere();
+//    let scene = scenes::one_sphere_two_lights();
+    let scene = scenes::one_sphere();
     let camera = Camera::fixed();
     let pixels = render(&scene, &camera);
     let colours: Vec<Colour> = normalise_intensity(pixels);
