@@ -65,7 +65,7 @@ impl XzPlane {
 
     pub fn new(y: f64, x_min: f64, x_max: f64, z_min: f64, z_max: f64, colour: Colour) -> XzPlane {
         let p0 = Vec3::new(x_min, y, z_min);
-        let normal = Vec3::new(0.0, 1.0, 0.0);
+        let normal = Vec3::new(0.0, 1.0, 0.0).normalised();
         XzPlane { y, x_min, x_max, z_min, z_max, colour, p0, normal }
     }
 
