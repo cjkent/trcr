@@ -72,29 +72,31 @@ impl XzPlane {
     }
 
     fn in_bounds(&self, pt: Vec3) -> bool {
-        pt.x >= self.x_min && pt.x <= self.x_max && pt.z >= self.z_min && pt.z <= self.z_max
+//        pt.x >= self.x_min && pt.x <= self.x_max && pt.z >= self.z_min && pt.z <= self.z_max
+        true
     }
 }
 
 impl SceneObject for XzPlane {
 
     fn intersect(&self, ray: &Ray) -> Option<f64> {
-        let denominator = self.normal.dot(&ray.dir);
+        let denominator = ray.dir.dot(&self.normal);
         // Ray is parallel to the plane (or close to it)
         return if denominator < 1e-6 {
-            trace!("Dot product of plane normal and ray < 1e-6: {:?}", denominator);
+            println!("Dot product of plane normal and ray < 1e-6: {:?}", denominator);
             None
         } else {
             let t = (self.p0 - ray.source).dot(&self.normal) / denominator;
             if t < 0.0 {
-                trace!("t < 0.0: {:?}", t);
+                println!("t < 0.0: {:?}", t);
                 None
             } else {
                 let intersection = ray.source + ray.dir * t;
                 if self.in_bounds(intersection) {
+                    println!("Ray intersects the plane at {:?}", intersection);
                     Some(t)
                 } else {
-                    trace!("Point is not in bounds: {:?}", intersection);
+                    println!("Point is not in bounds: {:?}", intersection);
                     None
                 }
             }
