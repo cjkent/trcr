@@ -80,10 +80,15 @@ impl XzPlane {
 impl SceneObject for XzPlane {
 
     fn intersect(&self, ray: &Ray) -> Option<f64> {
-        let denominator = ray.dir.dot(&self.normal);
+        let denominator = (ray.dir.dot(&self.normal));
         // Ray is parallel to the plane (or close to it)
         return if denominator < 1e-6 {
-            println!("Dot product of plane normal and ray < 1e-6: {:?}", denominator);
+            println!(
+                "Dot product of plane normal {:?} and ray {:?} < 1e-6: {:?}",
+                self.normal,
+                ray.dir,
+                denominator
+            );
             None
         } else {
             let t = (self.p0 - ray.source).dot(&self.normal) / denominator;
@@ -93,7 +98,7 @@ impl SceneObject for XzPlane {
             } else {
                 let intersection = ray.source + ray.dir * t;
                 if self.in_bounds(intersection) {
-                    println!("Ray intersects the plane at {:?}", intersection);
+//                    println!("Ray intersects the plane at {:?}", intersection);
                     Some(t)
                 } else {
                     println!("Point is not in bounds: {:?}", intersection);
